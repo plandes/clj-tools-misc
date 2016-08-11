@@ -111,6 +111,30 @@ replace) [clj-excel](https://github.com/outpace/clj-excel)."
                           (range row-count))))
               (range col-count)))))
 
+(defn rows-to-map
+  "Return a sequence of maps each with keys taken from the top header row.
+
+```
+[[\"Animal\" \"Size\"]
+ [\"fish\" 3]
+ [\"elephant\" 7]]
+```
+  becomes:
+```
+({:Animal \"fish\", :Size 3} {:Animal \"elephant\", :Size 7})
+```
+
+  Keys
+  ----
+  * **:to-key-fn** converts header to keys; defaults
+  to [[clojure.core/keyword]]"
+  [by-rows & {:keys [to-key-fn]
+              :or {to-key-fn keyword}}]
+  (let [header (->> by-rows first (map to-key-fn))]
+    (->> (rest by-rows)
+         (map (fn [row]
+                (zipmap header row))))))
+
 (defn csv-by-columns
   "Get CSV data by columns, which does a transpose on the data.
 
