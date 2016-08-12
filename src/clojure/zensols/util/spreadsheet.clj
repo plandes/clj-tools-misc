@@ -124,9 +124,9 @@ replace) [clj-excel](https://github.com/outpace/clj-excel)."
 ({:Animal \"fish\", :Size 3} {:Animal \"elephant\", :Size 7})
 ```
 
-  Keys
-  ----
-  * **:to-key-fn** converts header to keys; defaults
+Keys
+----
+* **:to-key-fn** converts header to keys; defaults
   to [[clojure.core/keyword]]"
   [by-rows & {:keys [to-key-fn]
               :or {to-key-fn keyword}}]
