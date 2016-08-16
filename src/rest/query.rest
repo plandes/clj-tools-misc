@@ -25,15 +25,3 @@ GET http://localhost:9200/example/instances/14
     "from": 0,
     "size": 9999
 }
-
-## states
-# by ID
-GET http://localhost:9200/example/stats/_search
-{
-    "query": { "match_all": {}},
-    "from": 0,
-    "size": 9999
-}
-
-# remove stats
-#DELETE http://localhost:9200/example/stats/_mapping
