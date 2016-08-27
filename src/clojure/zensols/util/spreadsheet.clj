@@ -3,7 +3,8 @@ with spreadsheets.  This package is designed to work with (not
 replace) [clj-excel](https://github.com/outpace/clj-excel)."
       :author "Paul Landes"}
     zensols.util.spreadsheet
-  (:require [clojure.java.io :as io])
+  (:require [clojure.java.io :as io]
+            [clojure.string :as s])
   (:require [clj-excel.core :as excel]
             [clojure.data.csv :as csv]))
 
@@ -111,8 +112,10 @@ replace) [clj-excel](https://github.com/outpace/clj-excel)."
                           (range row-count))))
               (range col-count)))))
 
-(defn rows-to-map
+(defn rows-to-maps
   "Return a sequence of maps each with keys taken from the top header row.
+
+  See [[rows-to-maps]].
 
 ```
 [[\"Animal\" \"Size\"]
@@ -128,12 +131,50 @@ Keys
 ----
 * **:to-key-fn** converts header to keys; defaults
   to [[clojure.core/keyword]]"
-  [by-rows & {:keys [to-key-fn]
-              :or {to-key-fn keyword}}]
-  (let [header (->> by-rows first (map to-key-fn))]
-    (->> (rest by-rows)
-         (map (fn [row]
-                (zipmap header row))))))
+  ([by-rows str-keys
+    & {:keys [to-key-fn]
+       :or {to-key-fn #(->> (s/replace % #"[._]" "-")
+                            s/lower-case keyword)}}]
+   (let [header (->> by-rows first (map to-key-fn))]
+     (->> (rest by-rows)
+          (map (fn [row]
+                 (zipmap header row)))))))
+
+(defn rows-to-maps
+  "Convert **by-rows** data (created by [[clojure.data.csv/read-csv]] for
+  example) and return a list of maps each with the keys of the header.
+
+  See [[rows-to-map]].
+
+  Keys
+  ----
+  * **:to-key-fn** converts header to keys; defaults
+  to [[clojure.core/keyword]]
+  * **:string-keys** hash set of keys (that match **:to-key-fn**) that if
+  provided are read as strings; all other values are parsed as numbers with
+  `read-string`"
+  [by-rows &
+   {:keys [to-key-fn string-keys]
+    :or {to-key-fn #(->> (s/replace % #"[. _]" "-")
+                         s/lower-case keyword)}}]
+  (letfn [(parse-kv [[k v]]
+            (try
+              ((if (contains? string-keys k)
+                 identity read-string)
+               v)
+              (catch Exception e
+                (let [msg (format "Couldn't parse numeric value <%s>" v)]
+                  (throw (ex-info msg {:key k :value v}))))))
+          (parse-nums [row]
+            (zipmap (keys row)
+                    (map parse-kv row)))]
+    (let [header (->> by-rows first (map to-key-fn))]
+      (->> (rest by-rows)
+           (map (fn [row]
+                  (zipmap header row)))
+           (map (if string-keys
+                  parse-nums
+                  identity))))))
 
 (defn csv-by-columns
   "Get CSV data by columns, which does a transpose on the data.
