@@ -16,5 +16,4 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  ;; spreadsheet
                  [org.clojure/data.csv "0.1.2"]
-                 [outpace/clj-excel "0.0.2"]]
-  :profiles {:uberjar {:aot :all}})
+                 [outpace/clj-excel "0.0.2"]])
