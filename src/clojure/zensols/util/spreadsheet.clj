@@ -112,6 +112,14 @@ replace) [clj-excel](https://github.com/outpace/clj-excel)."
                           (range row-count))))
               (range col-count)))))
 
+(defn rows-to-maps-key-fn
+  "Default function to convert a string key from a spreadsheet to a key used
+  in [[rows-to-maps]]."
+  [key]
+  (->> (s/replace key #"[._]" "-")
+       s/lower-case
+       keyword))
+
 (defn rows-to-maps
   "Return a sequence of maps each with keys taken from the top header row.
 
@@ -130,11 +138,10 @@ replace) [clj-excel](https://github.com/outpace/clj-excel)."
 Keys
 ----
 * **:to-key-fn** converts header to keys; defaults
-  to [[clojure.core/keyword]]"
+  to [[rows-to-maps-key-fn]]."
   ([by-rows str-keys
     & {:keys [to-key-fn]
-       :or {to-key-fn #(->> (s/replace % #"[._]" "-")
-                            s/lower-case keyword)}}]
+       :or {to-key-fn rows-to-maps-key-fn}}]
    (let [header (->> by-rows first (map to-key-fn))]
      (->> (rest by-rows)
           (map (fn [row]
