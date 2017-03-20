@@ -116,7 +116,7 @@ replace) [clj-excel](https://github.com/outpace/clj-excel)."
   "Default function to convert a string key from a spreadsheet to a key used
   in [[rows-to-maps]]."
   [key]
-  (->> (s/replace key #"[._]" "-")
+  (->> (s/replace key #"[._\s]" "-")
        s/lower-case
        keyword))
 
