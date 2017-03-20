@@ -112,7 +112,7 @@ replace) [clj-excel](https://github.com/outpace/clj-excel)."
                           (range row-count))))
               (range col-count)))))
 
-(defn rows-to-maps-key-fn
+(defn rows-to-maps-key
   "Default function to convert a string key from a spreadsheet to a key used
   in [[rows-to-maps]]."
   [key]
@@ -138,10 +138,10 @@ replace) [clj-excel](https://github.com/outpace/clj-excel)."
 Keys
 ----
 * **:to-key-fn** converts header to keys; defaults
-  to [[rows-to-maps-key-fn]]."
+  to [[rows-to-maps-key]]."
   ([by-rows str-keys
     & {:keys [to-key-fn]
-       :or {to-key-fn rows-to-maps-key-fn}}]
+       :or {to-key-fn rows-to-maps-key}}]
    (let [header (->> by-rows first (map to-key-fn))]
      (->> (rest by-rows)
           (map (fn [row]
