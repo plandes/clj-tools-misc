@@ -16,5 +16,7 @@
    (let [s (if (string? obj) obj (pr-str obj))
          slen (count s)
          trunc? (> slen len)
-         maxlen (max 0 (if trunc? (min slen (- len 3)) len))]
+         maxlen (-> (if trunc? (min slen (- len 3))
+                        (min slen len))
+                    (max 0))]
      (str (subs s 0 maxlen) (if trunc? "...")))))
