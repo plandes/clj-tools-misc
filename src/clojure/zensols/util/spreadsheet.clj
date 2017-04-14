@@ -125,19 +125,19 @@ replace) [clj-excel](https://github.com/outpace/clj-excel)."
 
   See [[rows-to-maps]].
 
-```
-[[\"Animal\" \"Size\"]
- [\"fish\" 3]
- [\"elephant\" 7]]
-```
+  ```
+  [[\"Animal\" \"Size\"]
+  [\"fish\" 3]
+  [\"elephant\" 7]]
+  ```
   becomes:
-```
-({:Animal \"fish\", :Size 3} {:Animal \"elephant\", :Size 7})
-```
+  ```
+  ({:Animal \"fish\", :Size 3} {:Animal \"elephant\", :Size 7})
+  ```
 
-Keys
-----
-* **:to-key-fn** converts header to keys; defaults
+  Keys
+  ----
+  * **:to-key-fn** converts header to keys; defaults
   to [[rows-to-maps-key]]."
   ([by-rows str-keys
     & {:keys [to-key-fn]
@@ -198,14 +198,80 @@ Keys
       (throw (ex-info (format "Couldn't parse %s" in-file)
                       {:in-file in-file} e)))))
 
-(defn excel-or-csv
-  "Read a CSV or XSL file and return the contents in an array of arrays."
-  [file & {:keys [by] :or {by :rows}}]
-  (let [csv? (not (re-find #"\.xlsx?$" (.getName file)))]
-    (if csv?
-      (csv-by-columns file)
-      (-> (excel/workbook-hssf file)
-          (.getSheetAt 0)
-          ((if (= by :rows)
-             sheet-by-rows
-             sheet-by-columns))))))
+(defn file-type
+  "Return the type of the spreadsheet file (ex: excel vs csv).
+
+  This uses the file name to determine this for now.  The function returns one
+  of the following keywords:
+
+  * **:excel:** Excel (.xls xlsx)
+  * **:csv** comma delimited (.csv)
+  * **:tsv** tab delimited (.tsv)
+  * **:text** text (.txt)"
+  [file]
+  (let [types [[:excel #"\.xlsx?$"]
+               [:csv #"\.csv$"]
+               [:tsv #"\.tsv$"]
+               [:text #"\.txt$"]]
+        filename (if (string? file)
+                   (io/file file)
+                   (.getName file))]
+    (->> types
+         (some (fn [[type regex]]
+                 (and (re-find regex filename) type)))
+         (#(or % 'unknown)))))
+
+(defmacro with-read-spreadsheet
+  "Read a spreadsheet file and return the contents in a sequence of sequences.
+
+  **exprs** is the special form:
+
+  `[file data opts]`
+
+  where:
+
+  * **file** is the file to open and close during the evaluation of
+  **forms** and **data** is any symbol used to refer to sequene of sequences
+  * **type** is the type of the file as a key (see [[file-type]])
+
+  **opts** is an optional map with keys:
+
+  * **:file-type-fn** a function to detect the type of spreadsheet as a keyword
+  and defaults to [[file-type]]
+
+Example
+-------
+
+```
+(let [file (io/file \"file1.csv\")]
+  (with-read-spreadsheet [file rows type]
+    (->> rows
+         rows-to-maps
+         (take 3)
+         doall)))
+```"
+  {:style/indent 1}
+  [exprs & forms]
+  (let [[file- data- ftype- opts-] exprs]
+    `(let [opts# ~opts-
+           file-type-fn# (or (:file-type-fn opts#) file-type)
+           reader# (gensym)
+           ~ftype- (file-type-fn# ~file-)]
+       (case ~ftype-
+         :csv (with-open [reader# (io/reader ~file-)]
+                (let [~data- (->> reader#
+                                  csv/read-csv)]
+                  ~@forms))
+         :tsv (with-open [reader# (io/reader ~file-)]
+                (let [~data- (-> reader#
+                                 (csv/read-csv :separator \tab))]
+                  ~@forms))
+         :excel (let [~data- (-> (excel/workbook-hssf ~file-)
+                                 (.getSheetAt 0)
+                                 sheet-by-rows)]
+                  ~@forms)
+         :text (with-open [reader# (io/reader ~file-)]
+                 (let [~data- (->> reader#
+                                   line-seq
+                                   (map list))]
+                   ~@forms))))))
