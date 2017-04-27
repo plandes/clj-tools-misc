@@ -6,12 +6,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased]
+
+
+## [0.0.5] - 2017-04-27
 ### Added
 - String truncation function.
+- Adding Changelog.
 
 ### Changed
 - Move to lein-git 1.2.7
 
 
-[Unreleased]: https://github.com/plandes/clj-ml-model/compare/v0.0.6...HEAD
-[0.0.6]: https://github.com/plandes/clj-ml-model/compare/v0.0.5...v0.0.6
+[Unreleased]: https://github.com/plandes/clj-tools-misc/compare/v0.0.5...HEAD
+[0.0.5]: https://github.com/plandes/clj-tools-misc/compare/v0.0.4...v0.0.5
